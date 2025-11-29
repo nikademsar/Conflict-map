@@ -1,0 +1,59 @@
+{
+  "mappings": {
+    "properties": {
+      "id": { "type": "long" },
+      "relid": { "type": "keyword" },
+      "year": { "type": "integer" },
+      "active_year": { "type": "boolean" },
+      "code_status": { "type": "keyword" },
+      "type_of_violence": { "type": "integer" },
+      "conflict_dset_id": { "type": "integer" },
+      "conflict_new_id": { "type": "integer" },
+      "conflict_name": { "type": "text" },
+      "dyad_dset_id": { "type": "integer" },
+      "dyad_new_id": { "type": "integer" },
+      "dyad_name": { "type": "text" },
+      "side_a_dset_id": { "type": "integer" },
+      "side_a_new_id": { "type": "integer" },
+      "side_a": { "type": "text" },
+      "side_b_dset_id": { "type": "integer" },
+      "side_b_new_id": { "type": "integer" },
+      "side_b": { "type": "text" },
+      "number_of_sources": { "type": "integer" },
+      "source_article": { "type": "text" },
+      "source_office": { "type": "text" },
+      "source_date": { "type": "keyword" },
+      "source_headline": { "type": "text" },
+      "source_original": { "type": "text" },
+      "where_prec": { "type": "integer" },
+      "where_coordinates": { "type": "text" },
+      "where_description": { "type": "text" },
+      "adm_1": { "type": "text" },
+      "adm_2": { "type": "text" },
+      "latitude": { "type": "float" },
+      "longitude": { "type": "float" },
+      "priogrid_gid": { "type": "integer" },
+      "country": { "type": "keyword" },
+      "country_id": { "type": "integer" },
+      "region": { "type": "keyword" },
+      "event_clarity": { "type": "integer" },
+      "date_prec": { "type": "integer" },
+      "date_start": {
+        "type": "date",
+        "format": "yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis"
+      },
+      "date_end": {
+        "type": "date",
+        "format": "yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis"
+      },
+      "deaths_a": { "type": "integer" },
+      "deaths_b": { "type": "integer" },
+      "deaths_civilians": { "type": "integer" },
+      "deaths_unknown": { "type": "integer" },
+      "best": { "type": "integer" },
+      "high": { "type": "integer" },
+      "low": { "type": "integer" },
+      "geometry": { "type": "geo_shape" }
+    }
+  }
+}
