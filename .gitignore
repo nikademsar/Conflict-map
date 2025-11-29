@@ -1,0 +1,25 @@
+# Velike datoteke – izključene zaradi GitHub 100 MB limita
+.data/
+
+# Generalni Python arтеfakti
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtualna okolja
+.env/
+.venv/
+venv/
+.idea/
+
+# Cache mape
+.cache/
+.ipynb_checkpoints/
+
+# Log datoteke
+*.log
+
+# Sistem
+.DS_Store
+Thumbs.db

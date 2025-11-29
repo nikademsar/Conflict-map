@@ -1,0 +1,23 @@
+# Obdelava podatkov
+pandas
+numpy
+requests
+beautifulsoup4
+lxml
+python-dateutil
+
+# Geografski podatki in vizualizacija
+geopandas
+shapely
+pyproj
+geojson
+folium
+geopy
+
+# Backend (API)
+flask      # če uporabljaš Flask
+# fastapi  # če uporabljaš FastAPI
+uvicorn    # potrebna za FastAPI server
+
+# Elasticsearch
+elasticsearch
