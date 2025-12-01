@@ -1,4 +1,4 @@
-// Inicializacija zemljevida
+// Inicializacija zemljevid
 const map = L.map('map', { zoomControl: false}).setView([20, 0], 2); // svetovni pogled
 
 L.control.zoom({
