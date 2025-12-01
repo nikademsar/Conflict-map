@@ -9,7 +9,7 @@ html, body {
 
 /* Zemljevid čez celo stran */
 #map {
-    position: absolute;
+    position: relative;
     top: 0;
     left: 0;
     width: 100%;
@@ -29,19 +29,7 @@ h1 {
     margin: 0;
 }
 
-/* Slider container */
-#year-container {
-    position: absolute;
-    top: 80px;
-    left: 30px;
-    z-index: 10;
-    color: white;
-    font-size: 18px;
-    background: rgba(0, 0, 0, 0.4);
-    padding: 10px 15px;
-    border-radius: 8px;
-    backdrop-filter: blur(4px);
-}
+
 
 /* Slider stil */
 input[type="range"] {
@@ -53,3 +41,104 @@ input[type="range"] {
 #year-value {
     font-weight: bold;
 }
+
+
+
+
+
+/* Leaflet zoom gumbi */
+.leaflet-control-zoom {
+    background: rgba(0,0,0,0.45) !important;
+    backdrop-filter: blur(4px);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.leaflet-control-zoom a {
+    width: 34px;
+    height: 34px;
+    line-height: 34px;
+    color: white;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    text-align: center;
+    transition: background 0.2s;
+}
+
+.leaflet-control-zoom a:hover {
+    background: rgba(180,180,180,0.2) !important;
+    color: white;
+}
+
+
+
+
+
+
+/* Slider bar na dnu  */
+#year-container {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 20;
+}
+
+/* slider */
+#year {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 400px;               /* širina */
+    height: 10px;               /* nizek */
+    background: white;
+    border: 1px solid black;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* Track */
+#year::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 4px;
+    background: white;
+}
+
+#year::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: black !important;       /* črn kvadratek */
+    border-radius: 2px;        /* skoraj kvadrat, da ni čisto rezan */
+    margin-top: -3px;          /* poravnava na sredino tracka */
+}
+
+#year-value {
+    margin-top: 6px;
+    font-size: 15px;
+    font-weight: bold;
+    color: black;
+}
+
+
+
+
+.legend {
+    background: rgba(0,0,0,0.5);
+    color: white;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+
