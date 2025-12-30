@@ -4,7 +4,7 @@ import subprocess
 import time
 
 # --- Nastavitve ---
-GEOCSV_PATH = "data/raw/ucdp.csv"
+GEOCSV_PATH = "data/raw/ucdp_prio_acd.csv"
 ETL_SCRIPT = "backend/etl/process_data.py"
 BULK_SCRIPT = "backend/elastic/bulk_load.py"
 DOCKER_COMPOSE_FILE = "docker-compose.yml"

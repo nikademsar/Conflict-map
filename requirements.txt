@@ -15,8 +15,8 @@ folium
 geopy
 
 # Backend (API)
-flask      # če uporabljaš Flask
-# fastapi  # če uporabljaš FastAPI
+#flask      # če uporabljaš Flask
+fastapi  # če uporabljaš FastAPI
 uvicorn    # potrebna za FastAPI server
 
 # Elasticsearch

@@ -40,11 +40,11 @@
       "date_prec": { "type": "integer" },
       "date_start": {
         "type": "date",
-        "format": "yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis"
+        "format": "yyyy-MM-dd'T'HH:mm:ss||strict_date_optional_time||epoch_millis"
       },
       "date_end": {
         "type": "date",
-        "format": "yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis"
+        "format": "yyyy-MM-dd'T'HH:mm:ss||strict_date_optional_time||epoch_millis"
       },
       "deaths_a": { "type": "integer" },
       "deaths_b": { "type": "integer" },
