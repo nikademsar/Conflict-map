@@ -63,12 +63,57 @@ def get_conflict_countries(year: int, size: int = 10000):
         track_total_hits=False,
     )
 
-    features = []
+    # agregacija po country_name (eno geojson feature na državo)
+    by_country = {}
+
     for hit in result["hits"]["hits"]:
         src = fix_json(hit["_source"])
-        geom = src.get("geometry")  # geo_shape kot GeoJSON dict
-        props = dict(src)
-        props.pop("geometry", None)
-        features.append({"type": "Feature", "geometry": geom, "properties": props})
+        geom = src.get("geometry")
+        if geom is None:
+            continue
+
+        country = src.get("country_name")
+        if not country:
+            continue
+
+        intensity = src.get("intensity_level")
+        try:
+            intensity = int(intensity) if intensity is not None else None
+        except Exception:
+            intensity = None
+
+        conflict_id = src.get("conflict_id")
+
+        if country not in by_country:
+            # osnova: vzemi prvo geometrijo in osnovne props
+            props = dict(src)
+            props.pop("geometry", None)
+
+            props["intensity_level_max"] = intensity if intensity is not None else 0
+            props["conflicts_count"] = 1
+            props["conflict_ids"] = [conflict_id] if conflict_id is not None else []
+            by_country[country] = {"geometry": geom, "properties": props}
+        else:
+            p = by_country[country]["properties"]
+            p["conflicts_count"] = int(p.get("conflicts_count", 0)) + 1
+
+            old_max = int(p.get("intensity_level_max", 0) or 0)
+            new_max = intensity if intensity is not None else 0
+            if new_max > old_max:
+                p["intensity_level_max"] = new_max
+
+            if conflict_id is not None:
+                p.setdefault("conflict_ids", [])
+                p["conflict_ids"].append(conflict_id)
+
+    features = []
+    for country, obj in by_country.items():
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": obj["geometry"],
+                "properties": obj["properties"],
+            }
+        )
 
     return {"type": "FeatureCollection", "features": features}

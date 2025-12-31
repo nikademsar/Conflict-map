@@ -16,7 +16,7 @@ INDEX_DEFINITION_FILE = os.path.join(BASE_DIR, "create_index.json")
 
 def create_index_if_needed(es: Elasticsearch):
     if es.indices.exists(index=INDEX_NAME):
-        print(f"[INFO] Indeks {INDEX_NAME} že obstaja.")
+        print(f"[INFO] Indeks {INDEX_NAME} ze obstaja.")
         return
     print(f"[INFO] Ustvarjam indeks {INDEX_NAME} iz {INDEX_DEFINITION_FILE}...")
     with open(INDEX_DEFINITION_FILE, "r", encoding="utf-8") as f:
@@ -73,7 +73,7 @@ def main():
 
         actions.append({"_index": INDEX_NAME, "_id": doc_id, "_source": doc})
 
-    print("[INFO] Začenjam bulk upload...")
+    print("[INFO] Zacenjam bulk upload...")
     success_count, fail_count = 0, 0
 
     for ok, item in helpers.streaming_bulk(es, actions, raise_on_error=False):
@@ -85,7 +85,7 @@ def main():
             doc_id = item.get("index", {}).get("_id")
             print(f"[ERROR] Dokument {doc_id} neuspešen: {err}")
 
-    print(f"[INFO] Bulk upload končan. Uspešno: {success_count}, Neuspešno: {fail_count}")
+    print(f"[INFO] Bulk upload koncan. Uspesno: {success_count}, Neuspesno: {fail_count}")
 
 
 if __name__ == "__main__":
