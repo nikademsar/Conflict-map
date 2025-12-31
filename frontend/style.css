@@ -169,3 +169,55 @@ input[type="range"] {
 .row .k { width: 190px; opacity: 0.8; }
 .row .v { flex: 1; word-break: break-word; }
 
+
+/* ZUNANJI CONTAINER – centrira celoten sklop */
+#year-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* NOTRANJI WRAPPER – Play + slider v vrsti */
+#year-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(700px, 90%);
+}
+
+/* PLAY GUMB */
+#play-btn {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+/* SLIDER WRAPPER – KLJUČNO */
+.year-slider-wrap {
+  position: relative;   /* ← bubble se veže NA SLIDER */
+  flex: 1 1 auto;
+}
+
+/* SLIDER */
+#year {
+  width: 100%;
+}
+
+/* LETNICA NAD SLIDERJEM */
+#year-bubble {
+  position: absolute;
+  top: -28px;           /* ← nad sliderjem */
+  left: 0;              /* JS bo nastavil pravi left */
+  transform: translateX(0);
+  pointer-events: none;
+  font-weight: bold;
+}
+
+/* OPTIONAL: vrednost ob sliderju */
+#year-value {
+  margin-left: 6px;
+  font-weight: bold;
+}
+
+

@@ -21,3 +21,5 @@ uvicorn    # potrebna za FastAPI server
 
 # Elasticsearch
 elasticsearch
+
+redis

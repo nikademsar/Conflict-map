@@ -22,11 +22,21 @@ map.addLayer(conflictClusters);
 let countriesLayer = null; // polygons layer (all years from API)
 
 // =======================
-// Slider + year bubble
+// Slider + year bubble + play
 // =======================
 const yearSlider = document.getElementById("year");
 const yearText = document.getElementById("year-value");
 const yearBubble = document.getElementById("year-bubble");
+const playBtn = document.getElementById("play-btn");
+
+let isPlaying = false;
+let playTimer = null;
+
+// hitrost animacije (ms na leto)
+const PLAY_INTERVAL_MS = 2000;
+
+// prepreči prekrivanje fetch klicev, ko interval teče
+let isLoadingYear = false;
 
 function positionYearBubble() {
   if (!yearBubble || !yearSlider) return;
@@ -38,7 +48,6 @@ function positionYearBubble() {
   const percent = (val - min) / (max - min); // 0..1
   const sliderWidth = yearSlider.offsetWidth;
 
-  // približna širina bubble (da je centriran nad "thumb")
   const bubbleWidth = yearBubble.offsetWidth || 44;
   const x = percent * sliderWidth - bubbleWidth / 2;
 
@@ -46,22 +55,108 @@ function positionYearBubble() {
   yearBubble.textContent = String(val);
 }
 
+function setYearUI(y) {
+  if (!yearSlider) return;
+  yearSlider.value = String(y);
+  if (yearText) yearText.textContent = String(y);
+  positionYearBubble();
+}
+
+function setPlayButtonLabel() {
+  if (!playBtn) return;
+  playBtn.textContent = isPlaying ? "Pause" : "Play";
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  if (playTimer) {
+    clearInterval(playTimer);
+    playTimer = null;
+  }
+  setPlayButtonLabel();
+}
+
+async function safeLoadYear(y, doFit = false) {
+  if (isLoadingYear) return;
+  isLoadingYear = true;
+  try {
+    await loadByYear(y, doFit);
+  } finally {
+    isLoadingYear = false;
+  }
+}
+
+async function stepForwardOneYear() {
+  if (!yearSlider) return;
+
+  const max = Number(yearSlider.max);
+  let y = Number(yearSlider.value);
+
+  if (y >= max) {
+    stopPlayback();
+    return;
+  }
+
+  y = y + 1;
+  setYearUI(y);
+
+  // nalaganje podatkov za novo leto
+  await safeLoadYear(y, false);
+
+  // če je uporabnik med nalaganjem pritisnil pause
+  if (!isPlaying) return;
+
+  // če smo prišli do konca
+  if (y >= max) stopPlayback();
+}
+
+function startPlayback() {
+  if (!yearSlider) return;
+
+  const max = Number(yearSlider.max);
+  const y = Number(yearSlider.value);
+  if (y >= max) return;
+
+  isPlaying = true;
+  setPlayButtonLabel();
+
+  playTimer = setInterval(() => {
+    // interval callback ne more biti await
+    stepForwardOneYear();
+  }, PLAY_INTERVAL_MS);
+}
+
+function togglePlayback() {
+  if (isPlaying) stopPlayback();
+  else startPlayback();
+}
+
+// Slider events
 if (yearSlider) {
   yearSlider.addEventListener("input", () => {
-    yearText.textContent = yearSlider.value;
+    if (yearText) yearText.textContent = yearSlider.value;
     positionYearBubble();
+
+    // če uporabnik ročno premika, ustavi animacijo
+    if (isPlaying) stopPlayback();
   });
 
   yearSlider.addEventListener("change", () => {
     const y = Number(yearSlider.value);
-    loadByYear(y, false);
+
+    // če uporabnik ročno spremeni leto, ustavi animacijo
+    if (isPlaying) stopPlayback();
+
+    safeLoadYear(y, false);
   });
 
-  window.addEventListener("resize", rememberResize);
+  window.addEventListener("resize", () => positionYearBubble());
 }
 
-function rememberResize() {
-  positionYearBubble();
+// Play button event
+if (playBtn) {
+  playBtn.addEventListener("click", () => togglePlayback());
+  setPlayButtonLabel();
 }
 
 // =======================
@@ -86,13 +181,14 @@ function decode(dict, code) {
 
 function fmtDateISO(v) {
   if (!v) return "";
-  // pričakovan format: "YYYY-MM-DD" ali podoben; prikažemo dejanski string
   return safe(v);
 }
 
 function popupRow(label, value) {
   if (value == null || value === "") return "";
-  return `<div class="row"><div class="k">${safe(label)}</div><div class="v">${safe(value)}</div></div>`;
+  return `<div class="row"><div class="k">${safe(label)}</div><div class="v">${safe(
+    value
+  )}</div></div>`;
 }
 
 function popupSection(title, rowsHtml) {
@@ -144,7 +240,6 @@ function buildCountryPopup(p) {
     popupRow("ISO3", p.iso3) +
     popupRow("Year", p.year);
 
-  // agregiran field iz backend-a: intensity_level_max
   const maxI = Number(p.intensity_level_max ?? p.intensity_level ?? 0);
 
   const acd =
@@ -152,7 +247,10 @@ function buildCountryPopup(p) {
     popupRow("Type of conflict", decode(ACD_TYPE_OF_CONFLICT, p.type_of_conflict)) +
     popupRow("Incompatibility", decode(ACD_INCOMPATIBILITY, p.incompatibility)) +
     popupRow("Conflicts count (in year)", p.conflicts_count) +
-    popupRow("Conflict IDs", Array.isArray(p.conflict_ids) ? p.conflict_ids.join(", ") : p.conflict_id);
+    popupRow(
+      "Conflict IDs",
+      Array.isArray(p.conflict_ids) ? p.conflict_ids.join(", ") : p.conflict_id
+    );
 
   return `
     ${header}
@@ -180,9 +278,7 @@ function buildEventPopup(p) {
     popupRow("Latitude", p.latitude) +
     popupRow("Longitude", p.longitude);
 
-  const time =
-    popupRow("Date start", fmtDateISO(p.date_start)) +
-    popupRow("Date end", fmtDateISO(p.date_end));
+  const time = popupRow("Date start", fmtDateISO(p.date_start)) + popupRow("Date end", fmtDateISO(p.date_end));
 
   const fat =
     popupRow("Best estimate fatalities", p.best) +
@@ -216,7 +312,6 @@ function radiusForBest(best) {
 }
 
 function countryFillForIntensity(maxIntensity) {
-  // ACD intensity_level: 1 = minor, 2 = war
   if (maxIntensity >= 2) return { fillColor: "#ff0000", fillOpacity: 0.45 };
   if (maxIntensity >= 1) return { fillColor: "#ffa500", fillOpacity: 0.30 };
   return { fillColor: "#888888", fillOpacity: 0.0 };
@@ -331,13 +426,11 @@ async function loadConflictCountries(year, doFit = false) {
 // =======================
 async function loadByYear(year, doFit = false) {
   if (year < 1989) {
-    // <1989: samo države (brez GED točk)
     clearPoints();
     await loadConflictCountries(year, doFit);
     return;
   }
 
-  // 1989+: države + točke
   await loadConflictCountries(year, false);
   await loadConflictEvents(year, doFit);
 }
@@ -368,4 +461,7 @@ if (yearText && yearSlider) {
   yearText.textContent = yearSlider.value;
 }
 positionYearBubble();
-loadByYear(Number(yearSlider.value), true);
+
+if (yearSlider) {
+  safeLoadYear(Number(yearSlider.value), true);
+}
