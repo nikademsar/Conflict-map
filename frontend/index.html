@@ -20,14 +20,65 @@
 <body>
   <h1>Conflict Map</h1>
 
+  <div id="filters">
+  <label>
+    Region:
+    <select id="filter-region">
+      <option value="">All</option>
+      <option value="Africa">Africa</option>
+      <option value="Americas">Americas</option>
+      <option value="Asia">Asia</option>
+      <option value="Europe">Europe</option>
+      <option value="Middle East">Middle East</option>
+    </select>
+  </label>
+
+  <label>
+    Type of violence:
+    <select id="filter-tov">
+      <option value="">All</option>
+      <option value="1">1 State-based</option>
+      <option value="2">2 Non-state</option>
+      <option value="3">3 One-sided</option>
+    </select>
+  </label>
+
+  <label>
+    Type of conflict:
+    <select id="filter-toc">
+      <option value="">All</option>
+      <option value="1">1 Extrasystemic</option>
+      <option value="2">2 Interstate</option>
+      <option value="3">3 Intrastate</option>
+      <option value="4">4 Internationalized intrastate</option>
+    </select>
+  </label>
+
+  <label>
+    Tntensity level:
+    <select id="filter-intensity">
+      <option value="">All</option>
+      <option value="1">1 Minor</option>
+      <option value="2">2 War</option>
+    </select>
+  </label>
+
+  <label>
+    Min fatalities (best):
+    <input id="filter-minbest" type="number" min="0" step="1" placeholder="e.g. 25" />
+  </label>
+
+  <button id="filter-clear" type="button">Clear</button>
+</div>
+
+
 <div id="year-container">
   <div id="year-wrap">
     <button id="play-btn" type="button" aria-label="Play timeline">Play</button>
 
     <div class="year-slider-wrap">
-      <input id="year" type="range" min="1946" max="2024" value="2001" step="1" />
-      <span id="year-value">2001</span>
-      <div id="year-bubble">2001</div>
+      <input id="year" type="range" min="1946" max="2024" value="2000" step="1" />
+      <div id="year-bubble">2000</div>
     </div>
   </div>
 </div>

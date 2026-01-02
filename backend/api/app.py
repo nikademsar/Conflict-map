@@ -8,7 +8,7 @@ from elasticsearch import Elasticsearch
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-# Optional Redis cache (requires `redis` package)
+# Optional Redis cache (requires `redis` package in requirements.txt)
 try:
     import redis  # type: ignore
 except Exception:
@@ -20,7 +20,7 @@ except Exception:
 # =======================
 ES_HOST = os.getenv("ES_HOST", "http://localhost:9200")
 
-REDIS_ENABLED = os.getenv("REDIS_ENABLED", "1") == "1"
+REDIS_ENABLED = os.getenv("REDIS_ENABLED", "0") == "1"  # default OFF unless enabled
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 REDIS_DB = int(os.getenv("REDIS_DB", "0"))
@@ -55,16 +55,17 @@ if REDIS_ENABLED and redis is not None:
             host=REDIS_HOST,
             port=REDIS_PORT,
             db=REDIS_DB,
-            decode_responses=True,  # store JSON as UTF-8 strings
+            decode_responses=True,
         )
-        # lightweight connectivity test
         redis_client.ping()
     except Exception:
-        redis_client = None  # cache silently disabled if not reachable
+        redis_client = None
 
 
-def cache_key(prefix: str, year: int, size: int) -> str:
-    return f"{prefix}:year={year}:size={size}"
+def cache_key(prefix: str, year: int, size: int, filters: Dict[str, Any]) -> str:
+    f = {k: v for k, v in filters.items() if v is not None and v != ""}
+    f_str = json.dumps(f, sort_keys=True, ensure_ascii=False)
+    return f"{prefix}:year={year}:size={size}:filters={f_str}"
 
 
 def cache_get(key: str) -> Optional[dict]:
@@ -92,10 +93,6 @@ def cache_set(key: str, value: dict) -> None:
 # Helpers
 # =======================
 def fix_json(value: Any) -> Any:
-    """
-    Recursively replace NaN-like values with None so they are JSON serializable.
-    (Matches existing project behavior.)
-    """
     if isinstance(value, dict):
         return {k: fix_json(v) for k, v in value.items()}
     if isinstance(value, list):
@@ -137,21 +134,47 @@ def health() -> Dict[str, Any]:
 # Endpoints
 # =======================
 @app.get("/conflicts")
-def get_conflicts(year: int, size: int = 10000) -> Dict[str, Any]:
+def get_conflicts(
+    year: int,
+    size: int = 10000,
+    region: Optional[str] = None,
+    country: Optional[str] = None,
+    type_of_violence: Optional[int] = None,
+    min_best: Optional[int] = None,
+) -> Dict[str, Any]:
     """
     Points (GED, 1989+): index "conflicts"
     Returns GeoJSON FeatureCollection.
+    Filters are applied via ES bool.filter (term/range).
     """
     size = clamp_size(size)
-    ck = cache_key("conflicts", year, size)
+
+    filters: Dict[str, Any] = {
+        "region": region,
+        "country": country,
+        "type_of_violence": type_of_violence,
+        "min_best": min_best,
+    }
+    ck = cache_key("conflicts", year, size, filters)
     cached = cache_get(ck)
     if cached is not None:
         return cached
 
+    must_filters = [{"term": {"year": year}}]
+
+    if region:
+        must_filters.append({"term": {"region": region}})
+    if country:
+        must_filters.append({"term": {"country": country}})
+    if type_of_violence is not None:
+        must_filters.append({"term": {"type_of_violence": int(type_of_violence)}})
+    if min_best is not None:
+        must_filters.append({"range": {"best": {"gte": int(min_best)}}})
+
     try:
         result = es.search(
             index="conflicts",
-            query={"term": {"year": year}},
+            query={"bool": {"filter": must_filters}},
             size=size,
             track_total_hits=False,
         )
@@ -172,7 +195,6 @@ def get_conflicts(year: int, size: int = 10000) -> Dict[str, Any]:
 
         props = dict(src)
         props.pop("geometry", None)
-
         features.append({"type": "Feature", "geometry": geom, "properties": props})
 
     response = {"type": "FeatureCollection", "features": features}
@@ -181,33 +203,53 @@ def get_conflicts(year: int, size: int = 10000) -> Dict[str, Any]:
 
 
 @app.get("/conflict-countries")
-def get_conflict_countries(year: int, size: int = 10000) -> Dict[str, Any]:
+def get_conflict_countries(
+    year: int,
+    size: int = 10000,
+    region: Optional[str] = None,
+    country_name: Optional[str] = None,
+    type_of_conflict: Optional[int] = None,
+    intensity_level: Optional[int] = None,
+) -> Dict[str, Any]:
     """
     Polygons (ACD + country polygons, 1946+): index "conflict_countries"
     Returns GeoJSON FeatureCollection.
-    Aggregates multiple conflict rows per country-year into a single feature per country.
+    Aggregates multiple rows per country-year into a single feature per country.
     """
     size = clamp_size(size)
-    ck = cache_key("conflict_countries", year, size)
+
+    filters: Dict[str, Any] = {
+        "region": region,
+        "country_name": country_name,
+        "type_of_conflict": type_of_conflict,
+        "intensity_level": intensity_level,
+    }
+    ck = cache_key("conflict_countries", year, size, filters)
     cached = cache_get(ck)
     if cached is not None:
         return cached
 
+    must_filters = [{"term": {"year": year}}]
+
+    if region:
+        must_filters.append({"term": {"region": region}})
+    if country_name:
+        must_filters.append({"term": {"country_name": country_name}})
+    if type_of_conflict is not None:
+        must_filters.append({"term": {"type_of_conflict": int(type_of_conflict)}})
+    if intensity_level is not None:
+        must_filters.append({"term": {"intensity_level": int(intensity_level)}})
+
     try:
         result = es.search(
             index="conflict_countries",
-            query={"term": {"year": year}},
+            query={"bool": {"filter": must_filters}},
             size=size,
             track_total_hits=False,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Elasticsearch error: {e}")
 
-    # Aggregate per country_name:
-    # - keep geometry from first record
-    # - intensity_level_max = max(intensity_level)
-    # - conflicts_count = number of rows for that country-year
-    # - conflict_ids = list of conflict_id values
     by_country: Dict[str, Dict[str, Any]] = {}
 
     hits = result.get("hits", {}).get("hits", [])
@@ -217,11 +259,10 @@ def get_conflict_countries(year: int, size: int = 10000) -> Dict[str, Any]:
         if geom is None:
             continue
 
-        country = src.get("country_name")
-        if not country:
+        cname = src.get("country_name")
+        if not cname:
             continue
 
-        # intensity_level (ACD): store max
         intensity = src.get("intensity_level")
         try:
             intensity_i = int(intensity) if intensity is not None else 0
@@ -230,7 +271,7 @@ def get_conflict_countries(year: int, size: int = 10000) -> Dict[str, Any]:
 
         conflict_id = src.get("conflict_id")
 
-        if country not in by_country:
+        if cname not in by_country:
             props = dict(src)
             props.pop("geometry", None)
 
@@ -238,11 +279,11 @@ def get_conflict_countries(year: int, size: int = 10000) -> Dict[str, Any]:
             props["conflicts_count"] = 1
             props["conflict_ids"] = [conflict_id] if conflict_id is not None else []
 
-            by_country[country] = {"geometry": geom, "properties": props}
+            by_country[cname] = {"geometry": geom, "properties": props}
         else:
-            p = by_country[country]["properties"]
+            p = by_country[cname]["properties"]
 
-            # increment count
+            # count
             try:
                 p["conflicts_count"] = int(p.get("conflicts_count", 0)) + 1
             except Exception:
@@ -278,10 +319,6 @@ def get_conflict_countries(year: int, size: int = 10000) -> Dict[str, Any]:
 
 @app.post("/cache/clear")
 def cache_clear() -> Dict[str, Any]:
-    """
-    Clears Redis DB used by this app (if connected).
-    Use after reloading ES data.
-    """
     if redis_client is None:
         return {"ok": False, "redis_connected": False}
     try:

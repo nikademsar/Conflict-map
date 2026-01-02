@@ -29,22 +29,11 @@ h1 {
     margin: 0;
 }
 
-
-
-/* Slider stil */
+/* Slider stil (splošno) */
 input[type="range"] {
     width: 250px;
     margin-top: 10px;
 }
-
-/* Letnica */
-#year-value {
-    font-weight: bold;
-}
-
-
-
-
 
 /* Leaflet zoom gumbi */
 .leaflet-control-zoom {
@@ -71,27 +60,54 @@ input[type="range"] {
     color: white;
 }
 
-
-
-
-
-
-/* Slider bar na dnu  */
+/* =========================
+   Slider bar na dnu (Play + slider)
+   ========================= */
 #year-container {
     position: absolute;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    text-align: center;
     z-index: 20;
+
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* NOTRANJI WRAPPER – Play + slider v vrsti */
+#year-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: min(700px, 90%);
+}
+
+/* PLAY GUMB */
+#play-btn {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: #000;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.35);
+    background: rgba(255,255,255,0.95);
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.18);
+}
+
+/* SLIDER WRAPPER – bubble je vezan sem */
+.year-slider-wrap {
+    position: relative;
+    flex: 1 1 auto;
 }
 
 /* slider */
 #year {
     -webkit-appearance: none;
     appearance: none;
-    width: 400px;               /* širina */
-    height: 10px;               /* nizek */
+    width: 100%;
+    height: 10px;
     background: white;
     border: 1px solid black;
     border-radius: 3px;
@@ -105,32 +121,33 @@ input[type="range"] {
     background: white;
 }
 
+/* Thumb */
 #year::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 16px;
     height: 16px;
-    background: black !important;       /* črn kvadratek */
-    border-radius: 2px;        /* skoraj kvadrat, da ni čisto rezan */
-    margin-top: -3px;          /* poravnava na sredino tracka */
+    background: black !important;
+    border-radius: 2px;
+    margin-top: -3px;
 }
 
-
-#year-wrap{
-    position: relative;
-    display: inline-block;
-}
-
-#year-bubble{
+/* Letnica nad sliderjem */
+#year-bubble {
     position: absolute;
-    top: -32px;               /* višina nad sliderjem */
+    top: -32px;
     left: 0;                  /* JS bo nastavil */
     transform: translateX(-50%);
     pointer-events: none;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 10px rgba(0,0,0,0.8);
 }
 
-#year-value{
+/* Letnica ob sliderju */
+#year-value {
     display: inline-block;
+    margin-left: 10px;
     padding: 2px 6px;
     background: white;
     border: 1px solid black;
@@ -140,7 +157,7 @@ input[type="range"] {
     color: black;
 }
 
-
+/* Legend */
 .legend {
     background: rgba(0,0,0,0.5);
     color: white;
@@ -157,6 +174,7 @@ input[type="range"] {
     vertical-align: middle;
 }
 
+/* Popups */
 .popup { font-size: 13px; line-height: 1.25; }
 .popup-header { margin-bottom: 8px; }
 .popup-header .h1 { font-weight: 700; font-size: 14px; }
@@ -169,55 +187,63 @@ input[type="range"] {
 .row .k { width: 190px; opacity: 0.8; }
 .row .v { flex: 1; word-break: break-word; }
 
+/* =========================
+   Filters (zgoraj desno)
+   - ostanejo na istem mestu (top/right)
+   - premaknjeni malo bolj levo (manjši right)
+   - VSE V ENI VRSTI (no wrap)
+   ========================= */
+#filters{
+    position: absolute;
+    top: 20px;
+    right: 50px;              /* <-- bolj levo kot prej (30px) */
+    z-index: 20;
 
-/* ZUNANJI CONTAINER – centrira celoten sklop */
-#year-container {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-bottom: 10px;
+    display: flex;
+    flex-wrap: nowrap;        /* <-- vse v eni vrsti */
+    align-items: center;
+    gap: 10px;                 /* manjši razmik */
+    padding: 5px 10px;
+
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    border-radius: 4px;
+    color: white;
+    font-size: 11px;
+
+    /* če je zaslon ozek, naj se ne razteza čez cel ekran */
+    max-width: calc(100vw - 140px);
+    overflow: hidden;
 }
 
-/* NOTRANJI WRAPPER – Play + slider v vrsti */
-#year-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: min(700px, 90%);
+#filters label{
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
 }
 
-/* PLAY GUMB */
-#play-btn {
-  flex: 0 0 auto;
-  padding: 6px 12px;
-  cursor: pointer;
+/* ožji selecti/inputi */
+#filters select,
+#filters input{
+    height: 22px;
+    font-size: 11px;
+    padding: 0 5px;
+    width: 100px;             /* <-- ožji elementi */
 }
 
-/* SLIDER WRAPPER – KLJUČNO */
-.year-slider-wrap {
-  position: relative;   /* ← bubble se veže NA SLIDER */
-  flex: 1 1 auto;
+#filter-minbest{
+    width: 70px;              /* <-- še bolj ozek */
 }
 
-/* SLIDER */
-#year {
-  width: 100%;
+#filter-clear{
+    height: 22px;
+    padding: 0 8px;
+    cursor: pointer;
+    font-size: 11px;
+    color: #000;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.35);
+    background: rgba(255,255,255,0.95);
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.18);
 }
-
-/* LETNICA NAD SLIDERJEM */
-#year-bubble {
-  position: absolute;
-  top: -28px;           /* ← nad sliderjem */
-  left: 0;              /* JS bo nastavil pravi left */
-  transform: translateX(0);
-  pointer-events: none;
-  font-weight: bold;
-}
-
-/* OPTIONAL: vrednost ob sliderju */
-#year-value {
-  margin-left: 6px;
-  font-weight: bold;
-}
-
-

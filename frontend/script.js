@@ -1,8 +1,14 @@
 // =======================
+// Config
+// =======================
+const API_BASE = "http://localhost:8000";
+const PLAY_INTERVAL_MS = 1500; // ms per year
+const MAX_FIT_ZOOM = 4;
+
+// =======================
 // Map init
 // =======================
 const map = L.map("map", { zoomControl: false }).setView([20, 0], 2);
-
 L.control.zoom({ position: "topright" }).addTo(map);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -22,22 +28,32 @@ map.addLayer(conflictClusters);
 let countriesLayer = null; // polygons layer (all years from API)
 
 // =======================
-// Slider + year bubble + play
+// UI elements
 // =======================
 const yearSlider = document.getElementById("year");
 const yearText = document.getElementById("year-value");
 const yearBubble = document.getElementById("year-bubble");
 const playBtn = document.getElementById("play-btn");
 
+// Filters (optional in DOM)
+const filterRegion = document.getElementById("filter-region");
+const filterTov = document.getElementById("filter-tov"); // GED type_of_violence
+const filterToc = document.getElementById("filter-toc"); // ACD type_of_conflict
+const filterIntensity = document.getElementById("filter-intensity"); // ACD intensity_level
+const filterMinBest = document.getElementById("filter-minbest"); // GED best >=
+const filterClearBtn = document.getElementById("filter-clear");
+
+// Playback state
 let isPlaying = false;
 let playTimer = null;
 
-// hitrost animacije (ms na leto)
-const PLAY_INTERVAL_MS = 2000;
-
-// prepreči prekrivanje fetch klicev, ko interval teče
+// Prevent overlapping loads (important for play + filters)
 let isLoadingYear = false;
+let pendingYear = null; // if a new year request comes while loading
 
+// =======================
+// Slider bubble
+// =======================
 function positionYearBubble() {
   if (!yearBubble || !yearSlider) return;
 
@@ -62,6 +78,30 @@ function setYearUI(y) {
   positionYearBubble();
 }
 
+// =======================
+// Filters helpers
+// =======================
+function currentFilters() {
+  return {
+    region: filterRegion ? filterRegion.value : "",
+    type_of_violence: filterTov ? filterTov.value : "",
+    type_of_conflict: filterToc ? filterToc.value : "",
+    intensity_level: filterIntensity ? filterIntensity.value : "",
+    min_best: filterMinBest ? filterMinBest.value : "",
+  };
+}
+
+function toQueryString(params) {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== "" && v != null) sp.set(k, v);
+  }
+  return sp.toString();
+}
+
+// =======================
+// Play / Pause
+// =======================
 function setPlayButtonLabel() {
   if (!playBtn) return;
   playBtn.textContent = isPlaying ? "Pause" : "Play";
@@ -74,16 +114,6 @@ function stopPlayback() {
     playTimer = null;
   }
   setPlayButtonLabel();
-}
-
-async function safeLoadYear(y, doFit = false) {
-  if (isLoadingYear) return;
-  isLoadingYear = true;
-  try {
-    await loadByYear(y, doFit);
-  } finally {
-    isLoadingYear = false;
-  }
 }
 
 async function stepForwardOneYear() {
@@ -99,14 +129,8 @@ async function stepForwardOneYear() {
 
   y = y + 1;
   setYearUI(y);
-
-  // nalaganje podatkov za novo leto
   await safeLoadYear(y, false);
 
-  // če je uporabnik med nalaganjem pritisnil pause
-  if (!isPlaying) return;
-
-  // če smo prišli do konca
   if (y >= max) stopPlayback();
 }
 
@@ -121,7 +145,6 @@ function startPlayback() {
   setPlayButtonLabel();
 
   playTimer = setInterval(() => {
-    // interval callback ne more biti await
     stepForwardOneYear();
   }, PLAY_INTERVAL_MS);
 }
@@ -129,34 +152,6 @@ function startPlayback() {
 function togglePlayback() {
   if (isPlaying) stopPlayback();
   else startPlayback();
-}
-
-// Slider events
-if (yearSlider) {
-  yearSlider.addEventListener("input", () => {
-    if (yearText) yearText.textContent = yearSlider.value;
-    positionYearBubble();
-
-    // če uporabnik ročno premika, ustavi animacijo
-    if (isPlaying) stopPlayback();
-  });
-
-  yearSlider.addEventListener("change", () => {
-    const y = Number(yearSlider.value);
-
-    // če uporabnik ročno spremeni leto, ustavi animacijo
-    if (isPlaying) stopPlayback();
-
-    safeLoadYear(y, false);
-  });
-
-  window.addEventListener("resize", () => positionYearBubble());
-}
-
-// Play button event
-if (playBtn) {
-  playBtn.addEventListener("click", () => togglePlayback());
-  setPlayButtonLabel();
 }
 
 // =======================
@@ -271,6 +266,7 @@ function buildEventPopup(p) {
     popupRow("Type of violence", decode(GED_TYPE_OF_VIOLENCE, p.type_of_violence));
 
   const loc =
+    popupRow("Region", p.region) +
     popupRow("Country", p.country) +
     popupRow("ADM-1", p.adm_1) +
     popupRow("ADM-2", p.adm_2) +
@@ -278,7 +274,9 @@ function buildEventPopup(p) {
     popupRow("Latitude", p.latitude) +
     popupRow("Longitude", p.longitude);
 
-  const time = popupRow("Date start", fmtDateISO(p.date_start)) + popupRow("Date end", fmtDateISO(p.date_end));
+  const time =
+    popupRow("Date start", fmtDateISO(p.date_start)) +
+    popupRow("Date end", fmtDateISO(p.date_end));
 
   const fat =
     popupRow("Best estimate fatalities", p.best) +
@@ -335,7 +333,16 @@ function clearPoints() {
 // Loaders
 // =======================
 async function loadConflictEvents(year, doFit = false) {
-  const url = `http://localhost:8000/conflicts?year=${year}`;
+  const f = currentFilters();
+
+  const qs = toQueryString({
+    year: String(year),
+    region: f.region,
+    type_of_violence: f.type_of_violence,
+    min_best: f.min_best,
+  });
+
+  const url = `${API_BASE}/conflicts?${qs}`;
 
   try {
     const response = await fetch(url);
@@ -346,7 +353,6 @@ async function loadConflictEvents(year, doFit = false) {
 
     const geojson = await response.json();
 
-    // osveži samo točke
     clearPoints();
 
     const layer = L.geoJSON(geojson, {
@@ -371,7 +377,7 @@ async function loadConflictEvents(year, doFit = false) {
 
     if (doFit) {
       const b = layer.getBounds();
-      if (b.isValid()) map.fitBounds(b, { maxZoom: 4 });
+      if (b.isValid()) map.fitBounds(b, { maxZoom: MAX_FIT_ZOOM });
     }
   } catch (err) {
     console.error("Load events error:", err);
@@ -379,7 +385,16 @@ async function loadConflictEvents(year, doFit = false) {
 }
 
 async function loadConflictCountries(year, doFit = false) {
-  const url = `http://localhost:8000/conflict-countries?year=${year}`;
+  const f = currentFilters();
+
+  const qs = toQueryString({
+    year: String(year),
+    region: f.region,
+    type_of_conflict: f.type_of_conflict,
+    intensity_level: f.intensity_level,
+  });
+
+  const url = `${API_BASE}/conflict-countries?${qs}`;
 
   try {
     const response = await fetch(url);
@@ -390,7 +405,6 @@ async function loadConflictCountries(year, doFit = false) {
 
     const geojson = await response.json();
 
-    // osveži samo poligone
     clearCountriesLayer();
 
     countriesLayer = L.geoJSON(geojson, {
@@ -414,7 +428,7 @@ async function loadConflictCountries(year, doFit = false) {
 
     if (doFit) {
       const b = countriesLayer.getBounds();
-      if (b.isValid()) map.fitBounds(b, { maxZoom: 4 });
+      if (b.isValid()) map.fitBounds(b, { maxZoom: MAX_FIT_ZOOM });
     }
   } catch (err) {
     console.error("Load countries error:", err);
@@ -426,13 +440,39 @@ async function loadConflictCountries(year, doFit = false) {
 // =======================
 async function loadByYear(year, doFit = false) {
   if (year < 1989) {
+    // <1989: only countries (no GED events)
     clearPoints();
     await loadConflictCountries(year, doFit);
     return;
   }
 
+  // 1989+: countries + events
   await loadConflictCountries(year, false);
   await loadConflictEvents(year, doFit);
+}
+
+// =======================
+// Safe loader (serialize requests)
+// =======================
+async function safeLoadYear(year, doFit = false) {
+  // If a load is in progress, keep only the latest requested year
+  if (isLoadingYear) {
+    pendingYear = { year, doFit };
+    return;
+  }
+
+  isLoadingYear = true;
+  try {
+    await loadByYear(year, doFit);
+  } finally {
+    isLoadingYear = false;
+  }
+
+  if (pendingYear) {
+    const next = pendingYear;
+    pendingYear = null;
+    await safeLoadYear(next.year, next.doFit);
+  }
 }
 
 // =======================
@@ -455,11 +495,68 @@ legend.onAdd = function () {
 legend.addTo(map);
 
 // =======================
+// UI wiring
+// =======================
+function reloadCurrentYear() {
+  if (!yearSlider) return;
+  const y = Number(yearSlider.value);
+  safeLoadYear(y, false);
+}
+
+function onFilterChanged() {
+  if (isPlaying) stopPlayback();
+  reloadCurrentYear();
+}
+
+if (filterRegion) filterRegion.addEventListener("change", onFilterChanged);
+if (filterTov) filterTov.addEventListener("change", onFilterChanged);
+if (filterToc) filterToc.addEventListener("change", onFilterChanged);
+if (filterIntensity) filterIntensity.addEventListener("change", onFilterChanged);
+
+if (filterMinBest) {
+  filterMinBest.addEventListener("input", () => {
+    if (isPlaying) stopPlayback();
+    reloadCurrentYear();
+  });
+}
+
+if (filterClearBtn) {
+  filterClearBtn.addEventListener("click", () => {
+    if (filterRegion) filterRegion.value = "";
+    if (filterTov) filterTov.value = "";
+    if (filterToc) filterToc.value = "";
+    if (filterIntensity) filterIntensity.value = "";
+    if (filterMinBest) filterMinBest.value = "";
+    onFilterChanged();
+  });
+}
+
+// Year slider behavior
+if (yearSlider) {
+  yearSlider.addEventListener("input", () => {
+    if (yearText) yearText.textContent = yearSlider.value;
+    positionYearBubble();
+    if (isPlaying) stopPlayback();
+  });
+
+  yearSlider.addEventListener("change", () => {
+    if (isPlaying) stopPlayback();
+    reloadCurrentYear();
+  });
+
+  window.addEventListener("resize", () => positionYearBubble());
+}
+
+// Play button
+if (playBtn) {
+  playBtn.addEventListener("click", () => togglePlayback());
+  setPlayButtonLabel();
+}
+
+// =======================
 // Initial load
 // =======================
-if (yearText && yearSlider) {
-  yearText.textContent = yearSlider.value;
-}
+if (yearText && yearSlider) yearText.textContent = yearSlider.value;
 positionYearBubble();
 
 if (yearSlider) {

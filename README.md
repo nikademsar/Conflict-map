@@ -2,7 +2,10 @@
 
 Interaktivna prostorsko-časovna vizualizacija oboroženih konfliktov na svetovni ravni, ki temelji na **uradnih podatkih Uppsala Conflict Data Program (UCDP)**.
 
-Projekt korektno ločuje obdobja **brez prostorskih dogodkov (1946–1988)** in **obdobje z natančno georeferenciranimi dogodki (1989–danes)**.
+Projekt korektno ločuje obdobja **brez georeferenciranih dogodkov (1946–1988)** in **obdobje z georeferenciranimi dogodki (1989–danes)**, pri čemer za leta **1989+** prikazuje **oboje**:
+
+* **točke dogodkov (GED)** in
+* **obarvane poligone držav v konfliktu (ACD + Natural Earth)**, kjer je **moč/barva odvisna od intenzitete konflikta**.
 
 ---
 
@@ -11,8 +14,8 @@ Projekt korektno ločuje obdobja **brez prostorskih dogodkov (1946–1988)** in 
 Projekt prikazuje oborožene konflikte skozi čas z uporabo zemljevida in letnega drsnika.
 Cilj je prikazati:
 
-* **katere države so bile v konfliktu v posameznem letu**,
-* **kje so se konflikti dejansko dogajali**, ko so na voljo prostorski dogodki,
+* **katere države so bile v konfliktu v posameznem letu** (poligoni držav),
+* **kje so se konflikti dejansko dogajali**, ko so na voljo prostorski dogodki (točke GED),
 * **intenzivnost konfliktov** in osnovne lastnosti (akterji, tip konflikta).
 
 ### Metodološka osnova (ključna)
@@ -20,16 +23,17 @@ Cilj je prikazati:
 * **1946–1988**
 
   * na voljo je **le UCDP/PRIO Armed Conflict Dataset (ACD)**
-  * **ni koordinat**
-  * na zemljevidu se prikazujejo **poligoni držav**, ki so bile v konfliktu
+  * **ni koordinat GED dogodkov**
+  * na zemljevidu se prikazujejo **poligoni držav**, ki so bile v konfliktu (ACD + Natural Earth)
 
 * **1989–danes**
 
   * ACD + **UCDP Georeferenced Event Dataset (GED)**
   * na voljo so **dogodki z latitude/longitude**
-  * na zemljevidu se prikazujejo **točke dogodkov**
+  * na zemljevidu se prikazujejo:
 
-To je **uradno priporočena in metodološko pravilna uporaba UCDP podatkov**.
+    * **poligoni držav v konfliktu** (obarvani po intenziteti ACD), in
+    * **točke dogodkov** (GED), združene z marker clustering
 
 ---
 
@@ -48,7 +52,6 @@ To je **uradno priporočena in metodološko pravilna uporaba UCDP podatkov**.
 ### Dodatni prostorski vir
 
 * **Natural Earth – Admin 0 Countries (poligoni držav)**
-  uporablja se za prikaz držav v konfliktu pred letom 1989
   `ne_110m_admin_0_countries.geojson`
   [https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson)
 
@@ -71,8 +74,8 @@ data/
 │   ├── ucdp_ged.csv
 │   └── ne_110m_admin_0_countries.geojson
 ├── processed/
-│   ├── conflicts_events.geojson        # točke (1989+)
-│   └── conflict_countries.geojson       # poligoni držav (1946+)
+│   ├── conflicts_events.geojson         # točke (GED, 1989+)
+│   └── conflict_countries.geojson       # poligoni držav (ACD+NE, 1946+)
 backend/
 ├── etl/
 │   └── process_data.py
@@ -93,14 +96,23 @@ frontend/
 
 ## Funkcionalnosti
 
-* letni drsnik (1946–danes),
+* letni drsnik (1946–2024),
+* **Play/Pause animacija** skozi leta (premika slider od trenutnega leta do konca),
 * samodejno preklapljanje vizualizacije:
 
-  * **poligoni držav** za leta < 1989,
-  * **točke dogodkov** za leta ≥ 1989,
-* interaktivni pop-up z osnovnimi podatki konflikta,
+  * **< 1989:** samo **poligoni držav v konfliktu**
+  * **≥ 1989:** **poligoni držav v konfliktu + točke GED dogodkov**
+* barvanje držav glede na **intenziteto konflikta (ACD intensity_level)**,
+* agregacija držav po letu:
+
+  * za državo v letu se izračuna **maksimalna intenziteta** (npr. `intensity_level_max`)
+  * shrani se tudi `conflicts_count` in seznam `conflict_ids` (odvisno od implementacije v API),
+* interaktivni pop-up za države in dogodke,
 * združevanje točk (marker clustering),
-* legenda intenzivnosti.
+* legenda:
+
+  * razreditev točk po fatalities (best),
+  * razreditev držav po ACD intenziteti.
 
 ---
 
@@ -110,10 +122,11 @@ frontend/
 * **Elasticsearch**
 
   * `geo_shape` za poligone držav
-  * `geo_point` / `geo_shape` za točke dogodkov
+  * `geo_shape` / `geo_point` za dogodke (odvisno od mappinga)
 * **FastAPI**
 * **Leaflet**
 * **Docker / Docker Compose**
+* (opcijsko) **Redis** za cache API odgovorov po letu
 
 ---
 
@@ -131,11 +144,15 @@ frontend/
 pip install -r requirements.txt
 ```
 
+Če uporabljaš Redis cache v API:
+
+* dodaj `redis` knjižnico v `requirements.txt` (npr. `redis>=5.0.0`).
+
 ---
 
 ## Zagon sistema
 
-### 1. Zagon Elasticsearch in Kibane
+### 1. Zagon Elasticsearch in Kibane (in opcijsko Redis)
 
 ```bash
 docker-compose up -d
@@ -145,6 +162,12 @@ Kibana:
 
 ```
 http://localhost:5601
+```
+
+Opcijsko (če dodaš Redis v compose), Redis port:
+
+```
+localhost:6379
 ```
 
 ---
@@ -198,6 +221,20 @@ GET /conflicts?year=YYYY
 GET /conflict-countries?year=YYYY
 ```
 
+Dodatno (če je vključeno v `app.py`):
+
+* health:
+
+```
+GET /health
+```
+
+* (opcijsko) brisanje cache:
+
+```
+POST /cache/clear
+```
+
 ---
 
 ### 5. Zagon frontenda
@@ -210,19 +247,18 @@ frontend/index.html
 
 ---
 
-## TODO
+## Redis cache
 
-* Redis cache za hitrejše nalaganje let
-* filtri (tip konflikta, regija, intenzivnost)
-* izboljšano barvanje držav glede na intenzivnost
-* animacija skozi čas
-* izboljšana legenda
-* prikaz konfliktov z več državami
-* iskanje konfliktov po državi
-* dokumentiranje metodoloških omejitev (1946–1988)
+Za hitrejše nalaganje let, lahko API kešira odgovore po letu v Redis:
+
+* ključ (primer): `conflicts:year=YYYY:size=...` in `conflict_countries:year=YYYY:size=...`
+* TTL nastavljiv (npr. `REDIS_TTL_SECONDS`)
+
+Priporočeno: po ponovnem nalaganju podatkov v Elasticsearch počisti cache (npr. `POST /cache/clear`), če je endpoint implementiran.
 
 ---
 
 ## Poročila
 
-[Povezava do uvodnega poročila](https://unilj-my.sharepoint.com/:w:/g/personal/nd3657_student_uni-lj_si/ESj02Kf7p2VKuE42LhPjx_MBQtv_fK4WkLZBLpFIDGQlMA)
+Povezava do uvodnega poročila:
+[https://unilj-my.sharepoint.com/:w:/g/personal/nd3657_student_uni-lj_si/ESj02Kf7p2VKuE42LhPjx_MBQtv_fK4WkLZBLpFIDGQlMA](https://unilj-my.sharepoint.com/:w:/g/personal/nd3657_student_uni-lj_si/ESj02Kf7p2VKuE42LhPjx_MBQtv_fK4WkLZBLpFIDGQlMA)
