@@ -1,0 +1,443 @@
+/* Odstrani paddinge in margine */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+/* Zemljevid čez celo stran */
+#map {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* ozadje */
+}
+
+/* Naslov */
+h1 {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    z-index: 10;
+    color: white;
+    font-size: 32px;
+    text-shadow: 0 0 10px rgba(0,0,0,0.7);
+    margin: 0;
+}
+
+/* Slider stil (splošno) */
+input[type="range"] {
+    width: 250px;
+    margin-top: 10px;
+}
+
+/* Zoom control: isti look kot Filters */
+.leaflet-control-zoom{
+  background: rgba(255,255,255,0.95) !important;
+  border: 1px solid rgba(0,0,0,0.35);
+  border-radius: 10px;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+/* + / − button (ista višina kot Filters) */
+.leaflet-control-zoom a{
+  width: 34px;
+  height: 30px;
+  line-height: 30px;
+  font-size: 18px;
+  color: #000 !important;
+
+  background: rgba(255,255,255,0.95) !important; /* ne prozorno */
+  border: none !important;
+  text-decoration: none;
+}
+
+/* črta med + in − (isti border) */
+.leaflet-control-zoom a + a{
+  border-top: 1px solid rgba(0,0,0,0.35) !important;
+}
+
+/* HOVER: dovolj viden na belem */
+.leaflet-control-zoom a:hover{
+  background: rgba(0,0,0,0.08) !important;  /* jasen, ampak still clean */
+}
+
+/* Active (klik) */
+.leaflet-control-zoom a:active{
+  background: rgba(0,0,0,0.14) !important;
+}
+
+
+/* =========================
+   Slider bar na dnu (Play + slider)
+   ========================= */
+#year-container {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* NOTRANJI WRAPPER – Play + slider v vrsti */
+#year-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: min(700px, 90%);
+}
+
+/* PLAY GUMB */
+#play-btn {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: #000;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.35);
+    background: rgba(255,255,255,0.95);
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.18);
+}
+
+/* SLIDER WRAPPER – bubble je vezan sem */
+.year-slider-wrap {
+    position: relative;
+    flex: 1 1 auto;
+}
+
+/* slider */
+#year {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 10px;
+    background: white;
+    border: 1px solid black;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* Track */
+#year::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 4px;
+    background: white;
+}
+
+/* Thumb */
+#year::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: black !important;
+    border-radius: 2px;
+    margin-top: -3px;
+}
+
+/* Letnica nad sliderjem */
+#year-bubble {
+    position: absolute;
+    top: -32px;
+    left: 0;                  /* JS bo nastavil */
+    transform: translateX(-50%);
+    pointer-events: none;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 10px rgba(0,0,0,0.8);
+}
+
+/* Letnica ob sliderju */
+#year-value {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 2px 6px;
+    background: white;
+    border: 1px solid black;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: bold;
+    color: black;
+}
+
+/* Legend */
+.legend {
+    background: rgba(0,0,0,0.40);
+    color: white;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.legend-box {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+
+
+
+
+
+/* Floating filters UI (top-right) */
+
+#filters-ui{
+  position: absolute;
+  top: 20px;
+  right: 50px;
+  z-index: 25;
+  width: auto;
+}
+
+
+/* Toggle button */
+#filters-toggle{
+  height: 30px;
+  padding: 0 12px;
+  cursor: pointer;
+  color: #000;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.35);
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.18);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+/* puščica */
+#filters-toggle::after{
+  content: "▾";
+  display: inline-block;
+  transition: transform 0.15s ease;
+  transform-origin: center;
+}
+
+/* ko je odprto (aria-expanded=true), obrni puščico */
+#filters-toggle[aria-expanded="true"]::after{
+  transform: rotate(180deg); /* ▾ -> ▴ */
+}
+
+
+/* Panel */
+#filters-panel{
+  position: absolute;      
+  top: calc(100% + 10px);  /* pod gumbom */
+  right: 0;                /* poravnan z gumbom */
+  width: 200px;
+  max-width: calc(100vw - 140px);
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(10px);
+  color: white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+
+/* Hide/show */
+.hidden{ display: none; }
+
+/* Grid inside panel */
+.filters-grid{
+  display: grid;
+  gap: 6px 12px;
+}
+
+#filters-panel label{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#filters-panel select,
+#filters-panel input{
+  height: 25px;
+  font-size: 12px;
+  padding: 0 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.95);
+  color: #111;
+}
+
+.filters-actions{
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+#filters-panel #filter-clear{
+  height: 30px;
+  padding: 0 12px;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid rgba(0,0,0,0.35);
+  background: rgba(255,255,255,0.95);
+  color: #000;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.18);
+}
+
+/* Responsive: on narrow screens use 1 column */
+@media (max-width: 720px){
+  #filters-panel{
+    width: min(360px, calc(100vw - 40px));
+    right: 20px;
+  }
+  .filters-grid{ grid-template-columns: 1fr; }
+}
+
+/* ======================
+   POPUP (Leaflet) – clean card
+   ====================== */
+
+/* odstrani “dodatne” ozadje efekte */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip-container{
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* pravi card */
+.leaflet-popup-content-wrapper{
+  background: #fff !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content{
+  margin: 0 !important;
+  width: 340px;            /* po želji 300–360 */
+  font-size: 12px;
+  color: #111;
+}
+
+/* trikotnik (tip) naj se ujema z cardom */
+.leaflet-popup-tip{
+  background: #fff !important;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+}
+
+/* ===== Header ===== */
+.popup-header{
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #2c2c2c, #444);
+  color: #fff;
+}
+
+.popup-title{
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.popup-sub{
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge{
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.20);
+}
+
+.popup-dates{
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.95;
+}
+
+/* ===== Body ===== */
+.popup-body{
+  padding: 10px 14px 12px;
+}
+
+.section{
+  padding: 10px 0;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+.section:first-child{ border-top: none; padding-top: 2px; }
+
+.section .t{
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  margin-bottom: 8px;
+}
+
+/* 2-col layout */
+.row{
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+.row .k{
+  opacity: 0.55;
+  font-weight: 600;
+}
+
+.row .v{
+  font-weight: 800;
+}
+
+/* “More details” naj bo manj pomemben */
+.popup-details{
+  margin-top: 6px;
+  opacity: 0.75;
+}
+.popup-details summary{
+  cursor: pointer;
+  font-weight: 800;
+}
+.popup-details summary:hover{
+  opacity: 1;
+}
+
+/* close gumb v headerju */
+.leaflet-popup-close-button{
+  top: 8px !important;
+  right: 10px !important;
+  color: rgba(255,255,255,0.85) !important;
+}
+.leaflet-popup-close-button:hover{
+  color: #fff !important;
+}
+
+
+
+
