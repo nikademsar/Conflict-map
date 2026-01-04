@@ -1,0 +1,17 @@
+{
+  "mappings": {
+    "properties": {
+      "conflict_id": { "type": "integer" },
+      "year": { "type": "integer" },
+      "country_name": { "type": "keyword" },
+      "type_of_conflict": { "type": "integer" },
+      "intensity_level": { "type": "integer" },
+      "incompatibility": { "type": "integer" },
+      "side_a": { "type": "text" },
+      "side_b": { "type": "text" },
+      "region": { "type": "keyword" },
+      "version": { "type": "keyword" },
+      "geometry": { "type": "geo_shape" }
+    }
+  }
+}
