@@ -1,5 +1,5 @@
 # Velike datoteke – izključene zaradi GitHub 100 MB limita
-data/
+.data/
 
 # Generalni Python arтеfakti
 __pycache__/
