@@ -238,7 +238,7 @@ input[type="range"] {
 
 /* Panel */
 #filters-panel{
-  position: absolute;      
+  position: absolute;
   top: calc(100% + 10px);  /* pod gumbom */
   right: 0;                /* poravnan z gumbom */
   width: 200px;
@@ -350,13 +350,17 @@ input[type="range"] {
   font-size: 14px;
   font-weight: 800;
   line-height: 1.15;
+  padding: 4px 14px;
 }
+
+
 
 .popup-sub{
   margin-top: 8px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  padding: 0px 10px;
 }
 
 .badge{
@@ -376,15 +380,16 @@ input[type="range"] {
   font-size: 12px;
   font-weight: 800;
   opacity: 0.95;
+  padding: 0px 14px;
 }
 
 /* ===== Body ===== */
 .popup-body{
-  padding: 10px 14px 12px;
+  padding: 14px 18px 16px; /* več prostora levo/desno in zgoraj */
 }
 
 .section{
-  padding: 10px 0;
+  padding: 10px 10px;
   border-top: 1px solid rgba(0,0,0,0.08);
 }
 .section:first-child{ border-top: none; padding-top: 2px; }
@@ -437,7 +442,3 @@ input[type="range"] {
 .leaflet-popup-close-button:hover{
   color: #fff !important;
 }
-
-
-
-

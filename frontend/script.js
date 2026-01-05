@@ -218,8 +218,8 @@ const GED_TYPE_OF_VIOLENCE = {
 // ACD (Annual) codes
 const ACD_TYPE_OF_CONFLICT = {
   1: "Extrasystemic",
-  2: "Interstate",
-  3: "Intrastate",
+  2: "Interstate (both sides are states)",
+  3: "Intrastate (side A is always a government; side B is always one or more rebel groups)",
   4: "Internationalized intrastate",
 };
 
@@ -238,10 +238,12 @@ const ACD_INCOMPATIBILITY = {
 // Popups
 // =======================
 function buildCountryPopup(p) {
-  const header = `<div class="popup-header">
-    <div class="h1">${safe(p.country_name ?? "Country")}</div>
-    <div class="h2">Year: ${safe(p.year ?? "")}</div>
-  </div>`;
+  const header = `
+    <div class="popup-header">
+      <div class="popup-title">${safe(p.country_name ?? "Country")}</div>
+      <div class="popup-dates">Year ${safe(p.year ?? "")}</div>
+    </div>
+  `;
 
   const base =
     popupRow("Country", p.country_name) +
@@ -254,7 +256,7 @@ function buildCountryPopup(p) {
     popupRow("Intensity (max)", decode(ACD_INTENSITY_LEVEL, maxI)) +
     popupRow("Type of conflict", decode(ACD_TYPE_OF_CONFLICT, p.type_of_conflict)) +
     popupRow("Incompatibility", decode(ACD_INCOMPATIBILITY, p.incompatibility)) +
-    popupRow("Conflicts count (in year)", p.conflicts_count) +
+    popupRow("Conflicts count", p.conflicts_count) +
     popupRow(
       "Conflict IDs",
       Array.isArray(p.conflict_ids) ? p.conflict_ids.join(", ") : p.conflict_id
@@ -262,10 +264,13 @@ function buildCountryPopup(p) {
 
   return `
     ${header}
-    ${popupSection("Base", base)}
-    ${popupSection("ACD (annual conflict)", acd)}
+    <div class="popup-body">
+      ${popupSection("Base", base)}
+      ${popupSection("ACD (annual conflict)", acd)}
+    </div>
   `;
 }
+
 
 function buildEventPopup(p) {
   const title = safe(p.dyad_name ?? p.conflict_name ?? "Event");
