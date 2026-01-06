@@ -12,8 +12,8 @@ in za leta **1989+** prikazuje **oboje**:
 * **točke dogodkov (GED)** in
 * **obarvane poligone držav v konfliktu (ACD + Natural Earth)**, kjer je **barva odvisna od intenzitete konflikta**.
 
-![Izgled aplikacije](images/Izgled1.png)
-![Izgled aplikacije](images/Izgled5.png)
+![Izgled aplikacije](https://github.com/nikademsar/Conflict-map/blob/master/images/izgled1.png?raw=true)
+![Izgled aplikacije](https://github.com/nikademsar/Conflict-map/blob/master/images/izgled5.png?raw=true)
 ---
 
 ## Opis projekta
