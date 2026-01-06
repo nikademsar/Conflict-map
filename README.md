@@ -1,39 +1,48 @@
 # Conflict Map
 
-Interaktivna prostorsko-časovna vizualizacija oboroženih konfliktov na svetovni ravni, ki temelji na **uradnih podatkih Uppsala Conflict Data Program (UCDP)**.
+Interaktivna **prostorsko-časovna vizualizacija oboroženih konfliktov na svetovni ravni**, ki temelji na **uradnih podatkih Uppsala Conflict Data Program (UCDP)** in uporablja **hibridni pristop (API + lokalni prostorski viri)**.
 
-Projekt korektno ločuje obdobja **brez georeferenciranih dogodkov (1946–1988)** in **obdobje z georeferenciranimi dogodki (1989–danes)**, pri čemer za leta **1989+** prikazuje **oboje**:
+Projekt korektno ločuje obdobja:
+
+* **1946–1988** – brez georeferenciranih dogodkov
+* **1989–danes** – z georeferenciranimi dogodki
+
+in za leta **1989+** prikazuje **oboje**:
 
 * **točke dogodkov (GED)** in
-* **obarvane poligone držav v konfliktu (ACD + Natural Earth)**, kjer je **moč/barva odvisna od intenzitete konflikta**.
+* **obarvane poligone držav v konfliktu (ACD + Natural Earth)**, kjer je **barva odvisna od intenzitete konflikta**.
 
+![Izgled aplikacije](images/Izgled1.png)
+![Izgled aplikacije](images/Izgled5.png)
 ---
 
 ## Opis projekta
 
-Projekt prikazuje oborožene konflikte skozi čas z uporabo zemljevida in letnega drsnika.
-Cilj je prikazati:
+Projekt prikazuje oborožene konflikte skozi čas z uporabo interaktivnega zemljevida in letnega drsnika. Cilji vizualizacije so:
 
-* **katere države so bile v konfliktu v posameznem letu** (poligoni držav),
-* **kje so se konflikti dejansko dogajali**, ko so na voljo prostorski dogodki (točke GED),
-* **intenzivnost konfliktov** in osnovne lastnosti (akterji, tip konflikta).
+* prikazati **katere države so bile v konfliktu v posameznem letu** (poligoni držav),
+* prikazati **kje so se konflikti dejansko dogajali**, ko so na voljo georeferencirani dogodki (točke GED),
+* prikazati **intenzivnost konfliktov** in osnovne lastnosti (akterji, tip konflikta, nezdružljivost).
 
-### Metodološka osnova (ključna)
+---
 
-* **1946–1988**
+## Metodološka osnova (ključna)
 
-  * na voljo je **le UCDP/PRIO Armed Conflict Dataset (ACD)**
-  * **ni koordinat GED dogodkov**
-  * na zemljevidu se prikazujejo **poligoni držav**, ki so bile v konfliktu (ACD + Natural Earth)
+### 1946–1988
 
-* **1989–danes**
+* na voljo je samo **UCDP/PRIO Armed Conflict Dataset (ACD)**,
+* **ni GED dogodkov in koordinat**,
+* zemljevid prikazuje **poligone držav v konfliktu**
+  (ACD + Natural Earth).
 
-  * ACD + **UCDP Georeferenced Event Dataset (GED)**
-  * na voljo so **dogodki z latitude/longitude**
-  * na zemljevidu se prikazujejo:
+### 1989–danes
 
-    * **poligoni držav v konfliktu** (obarvani po intenziteti ACD), in
-    * **točke dogodkov** (GED), združene z marker clustering
+* na voljo sta **ACD + UCDP Georeferenced Event Dataset (GED)**,
+* GED vsebuje dogodke z **latitude/longitude**,
+* zemljevid prikazuje:
+
+  * **poligone držav v konfliktu** (obarvane po ACD intenziteti),
+  * **točke dogodkov** (GED), združene z *marker clustering*.
 
 ---
 
@@ -42,26 +51,26 @@ Cilj je prikazati:
 ### Glavna vira (dejansko uporabljena)
 
 * **UCDP/PRIO Armed Conflict Dataset (Annual, 1946–present)**
-  `ucdp_prio_acd.csv`
-  [https://ucdp.uu.se/downloads/index.html#armedconflict](https://ucdp.uu.se/downloads/index.html#armedconflict)
+  dostop prek **UCDP API (`ucdpprioconflict`)**
+  [https://ucdp.uu.se/apidocs/](https://ucdp.uu.se/apidocs/)
 
 * **UCDP Georeferenced Event Dataset – Global (1989–present)**
-  `ucdp_ged.csv`
-  [https://ucdp.uu.se/downloads/index.html#ged_global](https://ucdp.uu.se/downloads/index.html#ged_global)
+  dostop prek **UCDP API (`gedevents`)**
+  [https://ucdp.uu.se/apidocs/](https://ucdp.uu.se/apidocs/)
 
-### Dodatni prostorski vir
+> Opomba: Projekt **ne uporablja več lokalnih CSV datotek UCDP**, temveč podatke pridobiva **programsko prek API**, z verzioniranimi in ponovljivimi poizvedbami.
+
+### Prostorski vir
 
 * **Natural Earth – Admin 0 Countries (poligoni držav)**
   `ne_110m_admin_0_countries.geojson`
-  [https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson)
+  [https://www.naturalearthdata.com/](https://www.naturalearthdata.com/)
 
-### Dokumentacija
+### Dodatni pomožni vir
 
-* UCDP/PRIO ACD Codebook
-  [https://ucdp.uu.se/downloads/replication_data/2023_ucdp-prio-acd-231.pdf](https://ucdp.uu.se/downloads/replication_data/2023_ucdp-prio-acd-231.pdf)
-
-* UCDP GED Codebook
-  [https://ucdp.uu.se/downloads/replication_data/2023_ucdp_ged_codebook.pdf](https://ucdp.uu.se/downloads/replication_data/2023_ucdp_ged_codebook.pdf)
+* **Gleditsch & Ward country codes (GWNo)**
+  uporabljeno za preslikavo `gwno_loc` → država
+  (preneseno in shranjeno lokalno kot `gw_states.csv`)
 
 ---
 
@@ -70,26 +79,31 @@ Cilj je prikazati:
 ```
 data/
 ├── raw/
-│   ├── ucdp_prio_acd.csv
-│   ├── ucdp_ged.csv
-│   └── ne_110m_admin_0_countries.geojson
+│   └── ne_110m_admin_0_countries.geojson   # Natural Earth poligoni držav
+├── raw_api/
+│   ├── gw_states.csv                       # GWNo → ime države
+│   ├── gedevents/                          # UCDP GED (API dump, paginiran)
+│   └── ucdpprioconflict/                   # UCDP ACD (API dump, paginiran)
 ├── processed/
-│   ├── conflicts_events.geojson         # točke (GED, 1989+)
-│   └── conflict_countries.geojson       # poligoni držav (ACD+NE, 1946+)
+│   ├── conflicts_events.geojson            # GED točke (1989+)
+│   └── conflict_countries.geojson          # ACD + države (1946+)
 backend/
 ├── etl/
-│   └── process_data.py
+│   ├── download_gwno_states.py              # GWNo helper (enkratni prenos)
+│   ├── fetch_ucdp_api.py                    # UCDP API → raw_api
+│   └── process_data_api.py                  # raw_api → processed GeoJSON
 ├── elastic/
-│   ├── bulk_load.py
-│   ├── bulk_load_countries.py
+│   ├── bulk_load.py                         # nalaganje GED v ES
+│   ├── bulk_load_countries.py               # nalaganje držav v ES
 │   ├── create_index.json
 │   └── create_index_countries.json
 ├── api/
-│   └── app.py
+│   └── app.py                               # FastAPI (ES + opcijski Redis)
 frontend/
 ├── index.html
 ├── script.js
 └── style.css
+run.bat                                      # celoten pipeline (Windows)
 ```
 
 ---
@@ -97,36 +111,36 @@ frontend/
 ## Funkcionalnosti
 
 * letni drsnik (1946–2024),
-* **Play/Pause animacija** skozi leta (premika slider od trenutnega leta do konca),
+* **Play / Pause animacija** skozi leta,
 * samodejno preklapljanje vizualizacije:
 
-  * **< 1989:** samo **poligoni držav v konfliktu**
-  * **≥ 1989:** **poligoni držav v konfliktu + točke GED dogodkov**
-* barvanje držav glede na **intenziteto konflikta (ACD intensity_level)**,
-* agregacija držav po letu:
+  * **< 1989:** samo **poligoni držav**
+  * **≥ 1989:** **poligoni + točke GED**
+* barvanje držav glede na **ACD intensity_level**,
+* agregacija konfliktov po državi in letu:
 
-  * za državo v letu se izračuna **maksimalna intenziteta** (npr. `intensity_level_max`)
-  * shrani se tudi `conflicts_count` in seznam `conflict_ids` (odvisno od implementacije v API),
+  * maksimalna intenziteta,
+  * število konfliktov,
 * interaktivni pop-up za države in dogodke,
-* združevanje točk (marker clustering),
-* legenda:
+* marker clustering za GED dogodke,
+* legenda za:
 
-  * razreditev točk po fatalities (best),
-  * razreditev držav po ACD intenziteti.
+  * intenziteto konfliktov (države),
+  * fatalitete dogodkov (GED).
 
 ---
 
 ## Tehnologije
 
-* **Python** (pandas, geopandas, shapely)
-* **Elasticsearch**
+* **Python** (pandas, geopandas, shapely, requests)
+* **Elasticsearch 8.x**
 
   * `geo_shape` za poligone držav
-  * `geo_shape` / `geo_point` za dogodke (odvisno od mappinga)
+  * `geo_shape` / `geo_point` za dogodke
 * **FastAPI**
 * **Leaflet**
 * **Docker / Docker Compose**
-* (opcijsko) **Redis** za cache API odgovorov po letu
+* (opcijsko) **Redis** za cache odgovorov API po letu
 
 ---
 
@@ -134,110 +148,90 @@ frontend/
 
 ### Zahteve
 
-* Python 3.10+
+* Python **3.10+**
 * Docker + Docker Compose
 * Git
 
-### Namestitev Python knjižnic
+### Python knjižnice
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Če uporabljaš Redis cache v API:
-
-* dodaj `redis` knjižnico v `requirements.txt` (npr. `redis>=5.0.0`).
+> Priporočilo: `elasticsearch==8.x` (client mora ustrezati verziji ES v Dockerju).
 
 ---
 
-## Zagon sistema
+## Zagon sistema (priporočeno)
 
-### 1. Zagon Elasticsearch in Kibane (in opcijsko Redis)
+### Windows – celoten pipeline
+
+```bat
+run.bat
+```
+
+Skript avtomatsko:
+
+1. zažene Docker (Elasticsearch, Kibana, Redis),
+2. pridobi GWNo seznam (če manjka),
+3. prenese UCDP podatke prek API (z resume podporo),
+4. izvede ETL,
+5. naloži podatke v Elasticsearch,
+6. zažene FastAPI backend.
+
+---
+
+## Ročni zagon (po korakih)
+
+### 1. Docker
 
 ```bash
 docker-compose up -d
 ```
 
-Kibana:
-
-```
-http://localhost:5601
-```
-
-Opcijsko (če dodaš Redis v compose), Redis port:
-
-```
-localhost:6379
-```
+* Kibana: [http://localhost:5601](http://localhost:5601)
+* Elasticsearch: [http://localhost:9200](http://localhost:9200)
 
 ---
 
-### 2. ETL – priprava podatkov
+### 2. ETL – prenos in obdelava
 
 ```bash
-python backend/etl/process_data.py
+python backend/etl/fetch_ucdp_api.py --resume
+python backend/etl/process_data_api.py
 ```
 
 Rezultat:
 
-* `conflicts_events.geojson` (GED, 1989+)
-* `conflict_countries.geojson` (ACD + države, 1946+)
+* `conflicts_events.geojson`
+* `conflict_countries.geojson`
 
 ---
 
-### 3. Nalaganje v Elasticsearch
-
-**Dogodki (točke):**
+### 3. Elasticsearch ingest
 
 ```bash
 python backend/elastic/bulk_load.py
-```
-
-**Države (poligoni):**
-
-```bash
 python backend/elastic/bulk_load_countries.py
 ```
 
 ---
 
-### 4. Zagon API-ja
+### 4. API
 
 ```bash
 uvicorn backend.api.app:app --reload --port 8000
 ```
 
-API endpointi:
+Endpointi:
 
-* dogodki:
-
-```
-GET /conflicts?year=YYYY
-```
-
-* države:
-
-```
-GET /conflict-countries?year=YYYY
-```
-
-Dodatno (če je vključeno v `app.py`):
-
-* health:
-
-```
-GET /health
-```
-
-* (opcijsko) brisanje cache:
-
-```
-POST /cache/clear
-```
+* `GET /conflicts?year=YYYY`
+* `GET /conflict-countries?year=YYYY`
+* `GET /health`
 
 ---
 
-### 5. Zagon frontenda
+### 5. Frontend
 
 Odpri:
 
@@ -247,18 +241,18 @@ frontend/index.html
 
 ---
 
-## Redis cache
+## Redis cache (opcijsko)
 
-Za hitrejše nalaganje let, lahko API kešira odgovore po letu v Redis:
-
-* ključ (primer): `conflicts:year=YYYY:size=...` in `conflict_countries:year=YYYY:size=...`
-* TTL nastavljiv (npr. `REDIS_TTL_SECONDS`)
-
-Priporočeno: po ponovnem nalaganju podatkov v Elasticsearch počisti cache (npr. `POST /cache/clear`), če je endpoint implementiran.
+* cache po letu (`conflicts:year=YYYY`, `conflict_countries:year=YYYY`)
+* nastavljiv TTL (`REDIS_TTL_SECONDS`)
+* priporočeno: po ponovnem ETL-ju počisti cache
 
 ---
 
-## Poročila
+## Opomba o metodologiji
 
-Povezava do uvodnega poročila:
-[https://unilj-my.sharepoint.com/:w:/g/personal/nd3657_student_uni-lj_si/ESj02Kf7p2VKuE42LhPjx_MBQtv_fK4WkLZBLpFIDGQlMA](https://unilj-my.sharepoint.com/:w:/g/personal/nd3657_student_uni-lj_si/ESj02Kf7p2VKuE42LhPjx_MBQtv_fK4WkLZBLpFIDGQlMA)
+Projekt je zasnovan skladno z metodologijo UCDP:
+
+* **ACD** se uporablja za letni obstoj in intenziteto konfliktov,
+* **GED** se uporablja izključno tam, kjer so dogodki prostorsko definirani,
+* za države se uporablja **Natural Earth**, saj UCDP ne ponuja poligonov.

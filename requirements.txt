@@ -20,6 +20,6 @@ fastapi  # če uporabljaš FastAPI
 uvicorn    # potrebna za FastAPI server
 
 # Elasticsearch
-elasticsearch
+elasticsearch==8.13.2
 
 redis
